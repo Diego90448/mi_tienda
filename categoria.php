@@ -1,56 +1,89 @@
-<?php 
-require_once "../modelos/Categoria.php";
+<?php
+//activamos almacenamiento en el buffer
+ob_start();
+session_start();
+if (!isset($_SESSION['nombre'])) {
+  header("Location: login.html");
+}else{
 
-$categoria=new Categoria();
 
-$idcategoria=isset($_POST["idcategoria"])? limpiarCadena($_POST["idcategoria"]):"";
-$nombre=isset($_POST["nombre"])? limpiarCadena($_POST["nombre"]):"";
-$descripcion=isset($_POST["descripcion"])? limpiarCadena($_POST["descripcion"]):"";
+require 'header.php';
 
-switch ($_GET["op"]) {
-	case 'guardaryeditar':
-	if (empty($idcategoria)) {
-		$rspta=$categoria->insertar($nombre,$descripcion);
-		echo $rspta ? "Datos registrados correctamente" : "No se pudo registrar los datos";
-	}else{
-         $rspta=$categoria->editar($idcategoria,$nombre,$descripcion);
-		echo $rspta ? "Datos actualizados correctamente" : "No se pudo actualizar los datos";
-	}
-		break;
-	
+if ($_SESSION['almacen']==1) {
 
-	case 'desactivar':
-		$rspta=$categoria->desactivar($idcategoria);
-		echo $rspta ? "Datos desactivados correctamente" : "No se pudo desactivar los datos";
-		break;
-	case 'activar':
-		$rspta=$categoria->activar($idcategoria);
-		echo $rspta ? "Datos activados correctamente" : "No se pudo activar los datos";
-		break;
-	
-	case 'mostrar':
-		$rspta=$categoria->mostrar($idcategoria);
-		echo json_encode($rspta);
-		break;
-
-    case 'listar':
-		$rspta=$categoria->listar();
-		$data=Array();
-
-		while ($reg=$rspta->fetch_object()) {
-			$data[]=array(
-            "0"=>($reg->condicion)?'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idcategoria.')"><i class="fa fa-pencil"></i></button>'.' '.'<button class="btn btn-danger btn-xs" onclick="desactivar('.$reg->idcategoria.')"><i class="fa fa-close"></i></button>':'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idcategoria.')"><i class="fa fa-pencil"></i></button>'.' '.'<button class="btn btn-primary btn-xs" onclick="activar('.$reg->idcategoria.')"><i class="fa fa-check"></i></button>',
-            "1"=>$reg->nombre,
-            "2"=>$reg->descripcion,
-            "3"=>($reg->condicion)?'<span class="label bg-green">Activado</span>':'<span class="label bg-red">Desactivado</span>'
-              );
-		}
-		$results=array(
-             "sEcho"=>1,//info para datatables
-             "iTotalRecords"=>count($data),//enviamos el total de registros al datatable
-             "iTotalDisplayRecords"=>count($data),//enviamos el total de registros a visualizar
-             "aaData"=>$data); 
-		echo json_encode($results);
-		break;
-}
  ?>
+    <div class="content-wrapper">
+    <!-- Main content -->
+    <section class="content">
+
+      <!-- Default box -->
+      <div class="row">
+        <div class="col-md-12">
+      <div class="box">
+<div class="box-header with-border">
+  <h1 class="box-title">Categoria <button class="btn btn-success" onclick="mostrarform(true)"><i class="fa fa-plus-circle"></i>Agregar</button></h1>
+  <div class="box-tools pull-right">
+    
+  </div>
+</div>
+<!--box-header-->
+<!--centro-->
+<div class="panel-body table-responsive" id="listadoregistros">
+  <table id="tbllistado" class="table table-striped table-bordered table-condensed table-hover">
+    <thead>
+      <th>Opciones</th>
+      <th>Nombre</th>
+      <th>Descripcion</th>
+      <th>Estado</th>
+    </thead>
+    <tbody>
+    </tbody>
+    <tfoot>
+       <th>Opciones</th>
+      <th>Nombre</th>
+      <th>Descripcion</th>
+      <th>Estado</th>
+    </tfoot>   
+  </table>
+</div>
+<div class="panel-body" style="height: 400px;" id="formularioregistros">
+  <form action="" name="formulario" id="formulario" method="POST">
+    <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Nombre</label>
+      <input class="form-control" type="hidden" name="idcategoria" id="idcategoria">
+      <input class="form-control" type="text" name="nombre" id="nombre" maxlength="50" placeholder="Nombre" required>
+    </div>
+        <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Descripcion</label>
+      <input class="form-control" type="text" name="descripcion" id="descripcion" maxlength="256" placeholder="Descripcion">
+    </div>
+    <div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      <button class="btn btn-primary" type="submit" id="btnGuardar"><i class="fa fa-save"></i>  Guardar</button>
+
+      <button class="btn btn-danger" onclick="cancelarform()" type="button"><i class="fa fa-arrow-circle-left"></i> Cancelar</button>
+    </div>
+  </form>
+</div>
+<!--fin centro-->
+      </div>
+      </div>
+      </div>
+      <!-- /.box -->
+
+    </section>
+    <!-- /.content -->
+  </div>
+<?php 
+}else{
+ require 'noacceso.php'; 
+}
+
+require 'footer.php';
+ ?>
+ <script src="scripts/categoria.js"></script>
+ <?php 
+}
+
+ob_end_flush();
+  ?>
+

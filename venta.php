@@ -1,148 +1,194 @@
-<?php 
-require_once "../modelos/Venta.php";
-if (strlen(session_id())<1) 
-	session_start();
-
-$venta = new Venta();
-
-$idventa=isset($_POST["idventa"])? limpiarCadena($_POST["idventa"]):"";
-$idcliente=isset($_POST["idcliente"])? limpiarCadena($_POST["idcliente"]):"";
-$idusuario=$_SESSION["idusuario"];
-$tipo_comprobante=isset($_POST["tipo_comprobante"])? limpiarCadena($_POST["tipo_comprobante"]):"";
-$serie_comprobante=isset($_POST["serie_comprobante"])? limpiarCadena($_POST["serie_comprobante"]):"";
-$num_comprobante=isset($_POST["num_comprobante"])? limpiarCadena($_POST["num_comprobante"]):"";
-$fecha_hora=isset($_POST["fecha_hora"])? limpiarCadena($_POST["fecha_hora"]):"";
-$impuesto=isset($_POST["impuesto"])? limpiarCadena($_POST["impuesto"]):"";
-$total_venta=isset($_POST["total_venta"])? limpiarCadena($_POST["total_venta"]):"";
-$forma_pago=isset($_POST["forma_pago"])? limpiarCadena($_POST["forma_pago"]):"";
+<?php
+//activamos almacenamiento en el buffer
+ob_start();
+session_start();
+if (!isset($_SESSION['nombre'])) {
+  header("Location: login.html");
+}else{
 
 
+require 'header.php';
 
+if ($_SESSION['ventas']==1) {
 
+ ?>
+    <div class="content-wrapper">
+    <!-- Main content -->
+    <section class="content">
 
-switch ($_GET["op"]) {
-	case 'guardaryeditar':
-	if (empty($idventa)) {
-		$rspta=$venta->insertar($idcliente,$idusuario,$tipo_comprobante,$serie_comprobante,$num_comprobante,$fecha_hora,$impuesto,$total_venta,$forma_pago,$_POST["idarticulo"],$_POST["cantidad"],$_POST["precio_venta"],$_POST["descuento"]); 
-		echo $rspta ? "Datos registrados correctamente" : "No se pudo registrar los datos";
-	}else{
+      <!-- Default box -->
+      <div class="row">
+        <div class="col-md-12">
+      <div class="box">
+<div class="box-header with-border">
+  <h1 class="box-title">Ventas <button class="btn btn-success" onclick="mostrarform(true)"><i class="fa fa-plus-circle"></i>Agregar</button></h1>
+  <div class="box-tools pull-right">
+    
+  </div>
+</div>
+<!--box-header-->
+<!--centro-->
+<div class="panel-body table-responsive" id="listadoregistros">
+  <table id="tbllistado" class="table table-striped table-bordered table-condensed table-hover">
+    <thead>
+      <th>Opciones</th>
+      <th>Fecha</th>
+      <th>Cliente</th>
+      <th>Usuario</th>
+      <th>Documento</th>
+      <th>Número</th>
+      <th>Total Venta</th>
+      <th>Estado</th>
+    </thead>
+    <tbody>
+    </tbody>
+    <tfoot>
+      <th>Opciones</th>
+      <th>Fecha</th>
+      <th>Cliente</th>
+      <th>Usuario</th>
+      <th>Documento</th>
+      <th>Número</th>
+      <th>Total Venta</th>
+      <th>Estado</th>
+    </tfoot>   
+  </table>
+</div>
+<div class="panel-body" style="height: 400px;" id="formularioregistros">
+  <form action="" name="formulario" id="formulario" method="POST">
+    <div class="form-group col-lg-8 col-md-8 col-xs-12">
+      <label for="">Cliente(*):</label>
+      <input class="form-control" type="hidden" name="idventa" id="idventa">
+      <select name="idcliente" id="idcliente" class="form-control selectpicker" data-live-search="true" required>
         
-	}
-		break;
-	
-
-	case 'anular':
-		$rspta=$venta->anular($idventa);
-		echo $rspta ? "Ingreso anulado correctamente" : "No se pudo anular el ingreso";
-		break;
-	
-	case 'mostrar':
-		$rspta=$venta->mostrar($idventa);
-		echo json_encode($rspta);
-		break;
-
-	case 'listarDetalle':
-		//recibimos el idventa
-		$id=$_GET['id'];
-
-		$rspta=$venta->listarDetalle($id);
-		$total=0;
-		echo ' <thead style="background-color:#A9D0F5">
+      </select>
+    </div>
+      <div class="form-group col-lg-4 col-md-4 col-xs-12">
+      <label for="">Fecha(*): </label>
+      <input class="form-control" type="date" name="fecha_hora" id="fecha_hora" required>
+    </div>
+     <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Tipo Comprobante(*): </label>
+     <select name="tipo_comprobante" id="tipo_comprobante" class="form-control selectpicker" required>
+       <option value="Boleta">Boleta</option>
+       <option value="Factura">Factura</option>
+       <option value="Ticket">Ticket</option>
+     </select>
+    </div>
+     <div class="form-group col-lg-2 col-md-2 col-xs-6">
+      <label for="">Serie: </label>
+      <input class="form-control" type="text" name="serie_comprobante" id="serie_comprobante" maxlength="7" placeholder="Serie">
+    </div>
+     <div class="form-group col-lg-2 col-md-2 col-xs-6">
+      <label for="">Número: </label>
+      <input class="form-control" type="text" name="num_comprobante" id="num_comprobante" maxlength="10" placeholder="Número" required>
+    </div>
+    <div class="form-group col-lg-2 col-md-2 col-xs-6">
+      <label for="">Impuesto: </label>
+      <input class="form-control" type="text" name="impuesto" id="impuesto">
+    </div>
+    <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Forma Pago(*): </label>
+     <select name="forma_pago" id="forma_pago" class="form-control selectpicker" required>
+       <option value="Efectivo">Efectivo</option>
+       <option value="Tarjeta">Tarjeta</option>
+     </select>
+    </div>
+    <div class="form-group col-lg-3 col-md-3 col-sm-6 col-xs-12">
+     <a data-toggle="modal" href="#myModal">
+       <button id="btnAgregarArt" type="button" class="btn btn-primary"><span class="fa fa-plus"></span>Agregar Articulos</button>
+     </a>
+    </div>
+<div class="form-group col-lg-12 col-md-12 col-xs-12">
+     <table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
+       <thead style="background-color:#A9D0F5">
         <th>Opciones</th>
         <th>Articulo</th>
         <th>Cantidad</th>
         <th>Precio Venta</th>
         <th>Descuento</th>
         <th>Subtotal</th>
-       </thead>';
-		while ($reg=$rspta->fetch_object()) {
-			echo '<tr class="filas">
-			<td></td>
-			<td>'.$reg->nombre.'</td>
-			<td>'.$reg->cantidad.'</td>
-			<td>'.$reg->precio_venta.'</td>
-			<td>'.$reg->descuento.'</td>
-			<td>'.$reg->subtotal.'</td></tr>';
-			$total=$total+($reg->precio_venta*$reg->cantidad-$reg->descuento);
-		}
-		echo '<tfoot>
+       </thead>
+       <tfoot>
          <th>TOTAL</th>
          <th></th>
          <th></th>
          <th></th>
          <th></th>
-         <th><h4 id="total">S/. '.$total.'</h4><input type="hidden" name="total_venta" id="total_venta"></th>
-       </tfoot>';
-		break;
+         <th><h4 id="total">S/. 0.00</h4><input type="hidden" name="total_venta" id="total_venta"></th>
+       </tfoot>
+       <tbody>
+         
+       </tbody>
+     </table>
+    </div>
+    <div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      <button class="btn btn-primary" type="submit" id="btnGuardar"><i class="fa fa-save"></i>  Guardar</button>
+      <button class="btn btn-danger" onclick="cancelarform()" type="button" id="btnCancelar"><i class="fa fa-arrow-circle-left"></i> Cancelar</button>
+    </div>
+  </form>
+</div>
+<!--fin centro-->
+      </div>
+      </div>
+      </div>
+      <!-- /.box -->
 
-    case 'listar':
-		$rspta=$venta->listar();
-		$data=Array();
+    </section>
+    <!-- /.content -->
+  </div>
 
-		while ($reg=$rspta->fetch_object()) {
-                 if ($reg->tipo_comprobante=='Ticket') {
-                 	$url='../reportes/exTicket.php?id=';
-                 }else{
-                    $url='../reportes/exFactura.php?id=';
-                 }
-
-			$data[]=array(
-            "0"=>(($reg->estado=='Aceptado')?'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idventa.')"><i class="fa fa-eye"></i></button>'.' '.'<button class="btn btn-danger btn-xs" onclick="anular('.$reg->idventa.')"><i class="fa fa-close"></i></button>':'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idventa.')"><i class="fa fa-eye"></i></button>').
-            '<a target="_blank" href="'.$url.$reg->idventa.'"> <button class="btn btn-info btn-xs"><i class="fa fa-file"></i></button></a>',
-            "1"=>$reg->fecha,
-            "2"=>$reg->cliente,
-            "3"=>$reg->usuario,
-            "4"=>$reg->tipo_comprobante,
-            "5"=>$reg->serie_comprobante. '-' .$reg->num_comprobante,
-            "6"=>$reg->total_venta,
-            "7"=>($reg->estado=='Aceptado')?'<span class="label bg-green">Aceptado</span>':'<span class="label bg-red">Anulado</span>'
-              );
-		}
-		$results=array(
-             "sEcho"=>1,//info para datatables
-             "iTotalRecords"=>count($data),//enviamos el total de registros al datatable
-             "iTotalDisplayRecords"=>count($data),//enviamos el total de registros a visualizar
-             "aaData"=>$data); 
-		echo json_encode($results);
-		break;
-
-		case 'selectCliente':
-			require_once "../modelos/Persona.php";
-			$persona = new Persona();
-
-			$rspta = $persona->listarc();
-
-			while ($reg = $rspta->fetch_object()) {
-				echo '<option value='.$reg->idpersona.'>'.$reg->nombre.'</option>';
-			}
-			break;
-
-			case 'listarArticulos':
-			require_once "../modelos/Articulo.php";
-			$articulo=new Articulo();
-
-				$rspta=$articulo->listarActivosVenta();
-		$data=Array();
-
-		while ($reg=$rspta->fetch_object()) {
-			$data[]=array(
-            "0"=>'<button class="btn btn-warning" onclick="agregarDetalle('.$reg->idarticulo.',\''.$reg->nombre.'\','.$reg->precio_venta.')"><span class="fa fa-plus"></span></button>',
-            "1"=>$reg->nombre,
-            "2"=>$reg->categoria,
-            "3"=>$reg->codigo,
-            "4"=>$reg->stock,
-            "5"=>$reg->precio_venta,
-            "6"=>"<img src='../files/articulos/".$reg->imagen."' height='50px' width='50px'>"
-          
-              );
-		}
-		$results=array(
-             "sEcho"=>1,//info para datatables
-             "iTotalRecords"=>count($data),//enviamos el total de registros al datatable
-             "iTotalDisplayRecords"=>count($data),//enviamos el total de registros a visualizar
-             "aaData"=>$data); 
-		echo json_encode($results);
-
-				break;
+  <!--Modal-->
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="width: 65% !important;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Seleccione un Articulo</h4>
+        </div>
+        <div class="modal-body">
+          <table id="tblarticulos" class="table table-striped table-bordered table-condensed table-hover">
+            <thead>
+              <th>Opciones</th>
+              <th>Nombre</th>
+              <th>Categoria</th>
+              <th>Código</th>
+              <th>Stock</th>
+              <th>Precio Venta</th>
+              <th>Imagen</th>
+            </thead>
+            <tbody>
+              
+            </tbody>
+            <tfoot>
+              <th>Opciones</th>
+              <th>Nombre</th>
+              <th>Categoria</th>
+              <th>Código</th>
+              <th>Stock</th>
+              <th>Precio Venta</th>
+              <th>Imagen</th>
+            </tfoot>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-default" type="button" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- fin Modal-->
+<?php 
+}else{
+ require 'noacceso.php'; 
 }
+
+require 'footer.php';
  ?>
+ <script src="scripts/venta.js"></script>
+ <?php 
+}
+
+ob_end_flush();
+  ?>
+

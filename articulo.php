@@ -1,87 +1,125 @@
 <?php 
-require_once "../modelos/Articulo.php";
+//activamos almacenamiento en el buffer
+ob_start();
+session_start();
+if (!isset($_SESSION['nombre'])) {
+  header("Location: login.html");
+}else{
 
-$articulo=new Articulo();
-
-$idarticulo=isset($_POST["idarticulo"])? limpiarCadena($_POST["idarticulo"]):"";
-$idcategoria=isset($_POST["idcategoria"])? limpiarCadena($_POST["idcategoria"]):"";
-$codigo=isset($_POST["codigo"])? limpiarCadena($_POST["codigo"]):"";
-$nombre=isset($_POST["nombre"])? limpiarCadena($_POST["nombre"]):"";
-$stock=isset($_POST["stock"])? limpiarCadena($_POST["stock"]):"";
-$precio_venta=isset($_POST["precio_venta"])? limpiarCadena($_POST["precio_venta"]):"";
-$descripcion=isset($_POST["descripcion"])? limpiarCadena($_POST["descripcion"]):"";
-$imagen=isset($_POST["imagen"])? limpiarCadena($_POST["imagen"]):"";
-
-switch ($_GET["op"]) {
-	case 'guardaryeditar':
-
-	if (!file_exists($_FILES['imagen']['tmp_name'])|| !is_uploaded_file($_FILES['imagen']['tmp_name'])) {
-		$imagen=$_POST["imagenactual"];
-	}else{
-		$ext=explode(".", $_FILES["imagen"]["name"]);
-		if ($_FILES['imagen']['type']=="image/jpg" || $_FILES['imagen']['type']=="image/jpeg" || $_FILES['imagen']['type']=="image/png") {
-			$imagen=round(microtime(true)).'.'. end($ext);
-			move_uploaded_file($_FILES["imagen"]["tmp_name"], "../files/articulos/".$imagen);
-		}
-	}
-	if (empty($idarticulo)) {
-		$rspta=$articulo->insertar($idcategoria,$codigo,$nombre,$stock,$descripcion,$precio_venta,$imagen);
-		echo $rspta ? "Datos registrados correctamente" : "No se pudo registrar los datos";
-	}else{
-         $rspta=$articulo->editar($idarticulo,$idcategoria,$codigo,$nombre,$stock,$descripcion,$precio_venta,$imagen);
-		echo $rspta ? "Datos actualizados correctamente" : "No se pudo actualizar los datos";
-	}
-		break;
-	
-
-	case 'desactivar':
-		$rspta=$articulo->desactivar($idarticulo);
-		echo $rspta ? "Datos desactivados correctamente" : "No se pudo desactivar los datos";
-		break;
-	case 'activar':
-		$rspta=$articulo->activar($idarticulo);
-		echo $rspta ? "Datos activados correctamente" : "No se pudo activar los datos";
-		break;
-	
-	case 'mostrar':
-		$rspta=$articulo->mostrar($idarticulo);
-		echo json_encode($rspta);
-		break;
-
-    case 'listar':
-		$rspta=$articulo->listar();
-		$data=Array();
-
-		while ($reg=$rspta->fetch_object()) {
-			$data[]=array(
-            "0"=>($reg->condicion)?'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idarticulo.')"><i class="fa fa-pencil"></i></button>'.' '.'<button class="btn btn-danger btn-xs" onclick="desactivar('.$reg->idarticulo.')"><i class="fa fa-close"></i></button>':'<button class="btn btn-warning btn-xs" onclick="mostrar('.$reg->idarticulo.')"><i class="fa fa-pencil"></i></button>'.' '.'<button class="btn btn-primary btn-xs" onclick="activar('.$reg->idarticulo.')"><i class="fa fa-check"></i></button>',
-            "1"=>$reg->nombre,
-            "2"=>$reg->categoria,
-            "3"=>$reg->codigo,
-            "4"=>$reg->stock,
-            "5"=>$reg->precio_venta,
-            "6"=>"<img src='../files/articulos/".$reg->imagen."' height='50px' width='50px'>",
-            "7"=>$reg->descripcion,
-            "8"=>($reg->condicion)?'<span class="label bg-green">Activado</span>':'<span class="label bg-red">Desactivado</span>'
-              );
-		}
-		$results=array(
-             "sEcho"=>1,//info para datatables
-             "iTotalRecords"=>count($data),//enviamos el total de registros al datatable
-             "iTotalDisplayRecords"=>count($data),//enviamos el total de registros a visualizar
-             "aaData"=>$data); 
-		echo json_encode($results);
-		break;
-
-		case 'selectCategoria':
-			require_once "../modelos/Categoria.php";
-			$categoria=new Categoria();
-
-			$rspta=$categoria->select();
-
-			while ($reg=$rspta->fetch_object()) {
-				echo '<option value=' . $reg->idcategoria.'>'.$reg->nombre.'</option>';
-			}
-			break;
-}
+require 'header.php';
+if ($_SESSION['almacen']==1) {
  ?>
+    <div class="content-wrapper">
+    <!-- Main content -->
+    <section class="content">
+
+      <!-- Default box -->
+      <div class="row">
+        <div class="col-md-12">
+      <div class="box">
+<div class="box-header with-border">
+  <h1 class="box-title">Articulo <button class="btn btn-success" onclick="mostrarform(true)" id="btnagregar"><i class="fa fa-plus-circle"></i>Agregar</button> <a target="_blank" href="../reportes/rptarticulos.php"><button class="btn btn-info">Reporte</button></a></h1>
+  <div class="box-tools pull-right">
+    
+  </div>
+</div>
+<!--box-header-->
+<!--centro-->
+<div class="panel-body table-responsive" id="listadoregistros">
+  <table id="tbllistado" class="table table-striped table-bordered table-condensed table-hover">
+    <thead>
+      <th>Opciones</th>
+      <th>Nombre</th>
+      <th>Categoria</th>
+      <th>Codigo</th>
+      <th>Stock</th>
+      <th>Precio Venta</th>
+      <th>Imagen</th>
+      <th>Descripcion</th>
+      <th>Estado</th>
+    </thead>
+    <tbody>
+    </tbody>
+    <tfoot>
+       <th>Opciones</th>
+      <th>Nombre</th>
+      <th>Categoria</th>
+      <th>Codigo</th>
+      <th>Stock</th>
+      <th>Precio Venta</th>
+      <th>Imagen</th>
+      <th>Descripcion</th>
+      <th>Estado</th>
+    </tfoot>   
+  </table>
+</div>
+<div class="panel-body" id="formularioregistros">
+  <form action="" name="formulario" id="formulario" method="POST">
+    <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Nombre(*):</label>
+      <input class="form-control" type="hidden" name="idarticulo" id="idarticulo">
+      <input class="form-control" type="text" name="nombre" id="nombre" maxlength="100" placeholder="Nombre" required>
+    </div>
+    <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Categoria(*):</label>
+      <select name="idcategoria" id="idcategoria" class="form-control selectpicker" data-Live-search="true" required></select>
+    </div>
+       <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Stock</label>
+      <input class="form-control" type="number" name="stock" id="stock"  required>
+    </div>
+       <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Descripcion</label>
+      <input class="form-control" type="text" name="descripcion" id="descripcion" maxlength="256" placeholder="Descripcion">
+    </div>
+    </div>
+       <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Precio Venta</label>
+      <input class="form-control" type="number" name="precio_venta" id="precio_venta"  required>
+    </div>
+        <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Imagen:</label>
+      <input class="form-control" type="file" name="imagen" id="imagen">
+      <input type="hidden" name="imagenactual" id="imagenactual">
+      <img src="" alt="" width="150px" height="120" id="imagenmuestra">
+    </div>
+    <div class="form-group col-lg-6 col-md-6 col-xs-12">
+      <label for="">Codigo:</label>
+      <input class="form-control" type="text" name="codigo" id="codigo" placeholder="codigo del prodcuto" required>
+      <button class="btn btn-success" type="button" onclick="generarbarcode()">Generar</button>
+      <button class="btn btn-info" type="button" onclick="imprimir()">Imprimir</button>
+      <div id="print">
+        <svg id="barcode"></svg>
+      </div>
+    </div>
+    <div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      <button class="btn btn-primary" type="submit" id="btnGuardar"><i class="fa fa-save"></i>  Guardar</button>
+
+      <button class="btn btn-danger" onclick="cancelarform()" type="button"><i class="fa fa-arrow-circle-left"></i> Cancelar</button>
+    </div>
+  </form>
+</div>
+<!--fin centro-->
+      </div>
+      </div>
+      </div>
+      <!-- /.box -->
+
+    </section>
+    <!-- /.content -->
+  </div>
+<?php 
+}else{
+ require 'noacceso.php'; 
+}
+require 'footer.php'
+ ?>
+ <script src="../public/js/JsBarcode.all.min.js"></script>
+ <script src="../public/js/jquery.PrintArea.js"></script>
+ <script src="scripts/articulo.js"></script>
+
+ <?php 
+}
+
+ob_end_flush();
+  ?>
